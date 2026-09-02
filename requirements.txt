@@ -10,7 +10,7 @@ django-cloudinary-storage==0.3.0
 python-dotenv==1.2.2
 qrcode==8.2
 dnspython==2.8.0
-Pillow==10.3.0
+Pillow==12.0.0
 psycopg2-binary==2.9.10
 gunicorn==26.0.0
 whitenoise==6.12.0
