@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Upload Media — MediaPlatform{% endblock %}
+
+{% block extra_css %}
+<style>
+.upload-zone {
+  border: 2px dashed #cbd5e1; border-radius: 14px;
+  padding: 48px 32px; text-align: center; cursor: pointer;
+  transition: all 0.2s ease; background: #f8fafc; margin-bottom: 24px;
+}
+.upload-zone.dragover { border-color: #1a56db; background: #eff6ff; }
+.upload-zone .icon { font-size: 2.5rem; margin-bottom: 12px; }
+.upload-zone h3 { font-size: 1rem; margin-bottom: 6px; color:#0f172a; }
+.upload-zone p  { font-size: 0.82rem; color: #94a3b8; }
+.ext-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; justify-content:center; }
+.ext-pill { padding:3px 10px; border-radius:100px; font-size:0.72rem; font-weight:500; background:#f1f5f9; color:#475569; }
+#fileInput { display:none; }
+.preview-box {
+  display:none; align-items:center; gap:14px;
+  padding:14px 18px; background:#f8fafc;
+  border:1.5px solid #e2e8f0; border-radius:10px; margin-bottom:20px;
+}
+.preview-icon { font-size:1.8rem; flex-shrink:0; }
+.preview-name { font-weight:500; font-size:0.92rem; }
+.preview-size { font-size:0.78rem; color:#94a3b8; }
+.progress-wrap { margin-top:8px; height:4px; background:#e2e8f0; border-radius:2px; overflow:hidden; }
+.progress-fill { height:100%; background:#1a56db; border-radius:2px; width:0; transition:width 0.3s; }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="nav">
+  <div class="nav__brand">Media<span style="color:#1a56db">Platform</span></div>
+  <div class="nav__links">
+    <a href="{% url 'media:uploader_dashboard' %}" class="nav__link">← My Uploads</a>
+    <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">{% csrf_token %}<button type="submit" class="btn btn--ghost btn--sm">Sign out</button></form>
+  </div>
+</nav>
+
+<div class="container page" style="max-width:720px;">
+  <div class="page__header">
+    <h1 class="page__title">Upload media</h1>
+    <p>Supported: video, audio, images, documents · Max {{ max_mb }} MB</p>
+  </div>
+
+  {% if messages %}
+  {% for msg in messages %}
+  <div class="card mb-16" style="border-left:3px solid {% if 'error' in msg.tags %}#ef4444{% else %}#22c55e{% endif %};padding:12px 16px;">
+    <p>{{ msg }}</p>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" id="uploadForm">
+    {% csrf_token %}
+
+    <!-- Drop zone -->
+    <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <div class="icon">☁️</div>
+      <h3>Drop your file here or click to browse</h3>
+      <p>Videos, images, audio, PDFs, Office files and more</p>
+      <div class="ext-list">
+        {% for ext in allowed_exts|slice:":20" %}
+        <span class="ext-pill">{{ ext }}</span>
+        {% endfor %}
+        {% if allowed_exts|length > 20 %}<span class="ext-pill">+{{ allowed_exts|length|add:"-20" }} more</span>{% endif %}
+      </div>
+    </div>
+    <input type="file" id="fileInput" name="file" accept="{{ allowed_exts|join:',' }}"/>
+
+    <!-- Preview -->
+    <div class="preview-box" id="previewBox">
+      <div class="preview-icon" id="previewIcon">📄</div>
+      <div style="flex:1;">
+        <div class="preview-name" id="previewName"></div>
+        <div class="preview-size" id="previewSize"></div>
+        <div class="progress-wrap"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+      <button type="button" onclick="clearFile()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:1.2rem;">×</button>
+    </div>
+
+    <!-- Fields -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="stack-24" style="padding:4px 0;">
+        <div class="field">
+          <label for="id_title">Title <span style="color:#ef4444">*</span></label>
+          <input type="text" id="id_title" name="title"
+            value="{{ form.title.value|default:'' }}"
+            placeholder="Give your file a descriptive title" required/>
+        </div>
+        <div class="field">
+          <label for="id_desc">Description</label>
+          <textarea id="id_desc" name="description" rows="3" placeholder="Optional description…" style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.92rem;resize:vertical;outline:none;font-family:inherit;">{{ form.description.value|default:'' }}</textarea>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="id_category">Category</label>
+            {{ form.category }}
+          </div>
+          <div class="field">
+            <label for="id_visibility">Visibility</label>
+            {{ form.visibility }}
+          </div>
+        </div>
+        <div class="field">
+          <label for="id_tags">Tags</label>
+          <input type="text" id="id_tags" name="tags"
+            value="{{ form.tags.value|default:'' }}"
+            placeholder="tag1, tag2, tag3"/>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn--primary btn--full" id="submitBtn">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+      Upload file
+    </button>
+  </form>
+</div>
+
+<script>
+const EXT_ICONS = {video:'🎬',image:'🖼️',audio:'🎵',pdf:'📕',doc:'📝',zip:'📦',default:'📄'};
+const VIDEO_EXT = ['.mp4','.mov','.avi','.mkv','.webm','.flv','.wmv','.m4v'];
+const AUDIO_EXT = ['.mp3','.wav','.aac','.flac','.ogg','.m4a','.wma'];
+const IMAGE_EXT = ['.jpg','.jpeg','.png','.gif','.webp','.svg','.bmp','.tiff'];
+
+function getIcon(name) {
+  const ext = name.slice(name.lastIndexOf('.')).toLowerCase();
+  if (VIDEO_EXT.includes(ext)) return '🎬';
+  if (AUDIO_EXT.includes(ext)) return '🎵';
+  if (IMAGE_EXT.includes(ext)) return '🖼️';
+  if (ext==='.pdf') return '📕';
+  if (['.doc','.docx','.ppt','.pptx','.xls','.xlsx'].includes(ext)) return '📝';
+  if (['.zip','.rar','.7z'].includes(ext)) return '📦';
+  return '📄';
+}
+function formatBytes(b) {
+  if (b<1024) return b+' B';
+  if (b<1024**2) return (b/1024).toFixed(1)+' KB';
+  if (b<1024**3) return (b/1024**2).toFixed(1)+' MB';
+  return (b/1024**3).toFixed(2)+' GB';
+}
+function showPreview(file) {
+  document.getElementById('previewIcon').textContent = getIcon(file.name);
+  document.getElementById('previewName').textContent = file.name;
+  document.getElementById('previewSize').textContent = formatBytes(file.size);
+  document.getElementById('previewBox').style.display = 'flex';
+  // Pre-fill title if empty
+  const t = document.getElementById('id_title');
+  if (!t.value) t.value = file.name.replace(/\.[^/.]+$/,'');
+}
+function clearFile() {
+  document.getElementById('fileInput').value='';
+  document.getElementById('previewBox').style.display='none';
+}
+document.getElementById('fileInput').addEventListener('change', e => {
+  if (e.target.files[0]) showPreview(e.target.files[0]);
+});
+// Drag & drop
+const dz = document.getElementById('dropZone');
+['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e=>{e.preventDefault();dz.classList.add('dragover');}));
+['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e=>{e.preventDefault();dz.classList.remove('dragover');}));
+dz.addEventListener('drop', e => {
+  const f = e.dataTransfer.files[0];
+  if (f) { document.getElementById('fileInput').files = e.dataTransfer.files; showPreview(f); }
+});
+// Submit animation
+document.getElementById('uploadForm').addEventListener('submit', () => {
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Uploading…';
+  let w=0;
+  const fill = document.getElementById('progressFill');
+  const iv = setInterval(()=>{ w=Math.min(w+2,90); fill.style.width=w+'%'; },200);
+});
+</script>
+{% endblock %}

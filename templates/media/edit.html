@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Edit {{ asset.title }} — MediaPlatform{% endblock %}
+{% block body %}
+<nav class="nav">
+  <div class="nav__brand">Media<span style="color:#1a56db">Platform</span></div>
+  <div class="nav__links"><a href="{% url 'media:uploader_dashboard' %}" class="nav__link">← My Uploads</a></div>
+</nav>
+<div class="container page" style="max-width:680px;">
+  <h1 class="page__title mb-24">Edit asset</h1>
+  <div class="card">
+    <form method="post">{% csrf_token %}
+      <div class="stack-24">
+        {% for field in form %}
+        <div class="field">
+          <label>{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<span style="font-size:0.78rem;color:#dc2626;">{{ field.errors.0 }}</span>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <div style="display:flex;gap:10px;margin-top:24px;">
+        <button type="submit" class="btn btn--primary">Save changes</button>
+        <a href="{% url 'media:uploader_dashboard' %}" class="btn btn--outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

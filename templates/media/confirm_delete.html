@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Delete Asset — MediaPlatform{% endblock %}
+{% block body %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f8fafc;padding:24px;">
+  <div class="card" style="max-width:440px;width:100%;text-align:center;padding:48px 40px;">
+    <div style="font-size:2.5rem;margin-bottom:16px;">🗑️</div>
+    <h2>Delete "{{ asset.title }}"?</h2>
+    <p style="margin-top:10px;font-size:0.88rem;color:#64748b;">This will permanently delete the file from Cloudinary. This cannot be undone.</p>
+    <form method="post" style="margin-top:28px;display:flex;gap:10px;justify-content:center;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn--danger">Yes, delete</button>
+      <a href="{% url 'media:uploader_dashboard' %}" class="btn btn--outline">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Audit Logs — MediaPlatform{% endblock %}
+{% block body %}
+<nav class="nav">
+  <div class="nav__brand">Media<span style="color:#1a4fd6">Platform</span></div>
+  <div class="nav__links">
+    <a href="{% url 'media:admin_dashboard' %}" class="nav__link">Dashboard</a>
+    <a href="{% url 'media:viewer_dashboard' %}" class="nav__link">Browse</a>
+    <a href="{% url 'media:audit_log_list' %}" class="nav__link nav__link--active">Audit logs</a>
+    <a href="{% url 'accounts:role_requests' %}" class="nav__link">Role Requests</a>
+    <a href="{% url 'accounts:profile' %}" class="nav__link">Profile</a>
+    <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">
+      {% csrf_token %}<button type="submit" class="btn btn--ghost btn--sm">Sign out</button>
+    </form>
+  </div>
+</nav>
+
+<main class="container page">
+  <div class="page__header mb-24">
+    <h1 class="page__title">Audit logs</h1>
+    <p>Security and activity records are retained as read-only entries.</p>
+  </div>
+
+  <form method="get" class="card mb-24" style="display:flex;flex-wrap:wrap;gap:12px;align-items:end;padding:16px;">
+    <label style="flex:2 1 220px;">
+      <span class="text-small text-muted" style="display:block;margin-bottom:5px;">Search</span>
+      <input name="q" value="{{ q }}" placeholder="Email, activity, IP, or path"
+        style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;" />
+    </label>
+    <label style="flex:1 1 170px;">
+      <span class="text-small text-muted" style="display:block;margin-bottom:5px;">Action</span>
+      <select name="action" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:white;">
+        <option value="">All actions</option>
+        {% for value, label in action_choices %}
+        <option value="{{ value }}" {% if action == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label style="flex:1 1 140px;">
+      <span class="text-small text-muted" style="display:block;margin-bottom:5px;">Category</span>
+      <select name="category" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:white;">
+        <option value="">All categories</option>
+        {% for value in categories %}
+        <option value="{{ value }}" {% if category == value %}selected{% endif %}>{{ value|capfirst }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div style="display:flex;gap:8px;">
+      <button type="submit" class="btn btn--primary">Filter</button>
+      <a href="{% url 'media:audit_log_list' %}" class="btn btn--outline">Clear</a>
+    </div>
+  </form>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>User</th>
+          <th>Action</th>
+          <th>Details</th>
+          <th>Source</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in page_obj %}
+        <tr>
+          <td class="text-small text-muted" style="white-space:nowrap;">{{ log.created_at|date:"M j, Y, H:i" }}</td>
+          <td>
+            <div style="font-weight:500;">{{ log.user_email|default:"Anonymous" }}</div>
+            {% if log.ip_address %}<div class="text-small text-muted">{{ log.ip_address }}</div>{% endif %}
+          </td>
+          <td><span class="badge badge--neutral">{{ log.get_action_display }}</span></td>
+          <td style="min-width:260px;">{{ log.description|default:"—" }}</td>
+          <td class="text-small text-muted">
+            {% if log.method %}{{ log.method }} {% endif %}{{ log.path|default:"—" }}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted text-center" style="padding:32px;">No audit logs match these filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <nav aria-label="Audit log pages" style="display:flex;justify-content:center;gap:8px;align-items:center;margin-top:20px;">
+    {% if page_obj.has_previous %}
+    <a class="btn btn--outline btn--sm" href="?q={{ q|urlencode }}&action={{ action|urlencode }}&category={{ category|urlencode }}&page={{ page_obj.previous_page_number }}">Previous</a>
+    {% endif %}
+    <span class="text-small text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a class="btn btn--outline btn--sm" href="?q={{ q|urlencode }}&action={{ action|urlencode }}&category={{ category|urlencode }}&page={{ page_obj.next_page_number }}">Next</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+</main>
+{% endblock %}

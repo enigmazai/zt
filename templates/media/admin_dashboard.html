@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard — MediaPlatform{% endblock %}
+{% block body %}
+<nav class="nav">
+  <div class="nav__brand">Media<span style="color:#1a4fd6">Platform</span></div>
+  <div class="nav__links">
+    <a href="{% url 'media:admin_dashboard' %}"  class="nav__link nav__link--active">Dashboard</a>
+    <a href="{% url 'media:viewer_dashboard' %}"  class="nav__link">Browse</a>
+    <a href="{% url 'media:audit_log_list' %}" class="nav__link">Audit logs</a>
+    <a href="{% url 'accounts:role_requests' %}"  class="nav__link">
+      Role Requests{% if pending_roles %} <span class="badge badge--amber" style="margin-left:3px;">{{ pending_roles }}</span>{% endif %}
+    </a>
+    <a href="{% url 'accounts:profile' %}" class="nav__link">Profile</a>
+    <a href="{% url 'media:upload' %}" class="btn btn--primary btn--sm">+ Upload</a>
+    <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">
+      {% csrf_token %}<button type="submit" class="btn btn--ghost btn--sm">Sign out</button>
+    </form>
+  </div>
+</nav>
+
+<div class="container page">
+  <div class="page__header flex-between mb-24">
+    <div>
+      <h1 class="page__title">Admin Dashboard</h1>
+      <p>Welcome back, {{ request.user.full_name }} · <span class="badge badge--teal">{{ request.user.get_role_display }}</span></p>
+    </div>
+    {% if pending_roles %}
+    <a href="{% url 'accounts:role_requests' %}" class="btn btn--primary">
+      Review {{ pending_roles }} pending request{{ pending_roles|pluralize }}
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- Stats -->
+  <div class="grid-4 mb-24">
+    <div class="card stat"><div class="stat__label">Total Users</div><div class="stat__value">{{ total_users }}</div></div>
+    <div class="card stat"><div class="stat__label">Total Assets</div><div class="stat__value">{{ total_assets }}</div></div>
+    <div class="card stat"><div class="stat__label">Published</div><div class="stat__value" style="color:#15803d">{{ published_count }}</div></div>
+    <div class="card stat"><div class="stat__label">Pending Approval</div><div class="stat__value" style="color:#c2410c">{{ pending_roles }}</div></div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Recent uploads -->
+    <div>
+      <div class="page__header flex-between mb-16">
+        <h3>Recent uploads</h3>
+        <a href="{% url 'media:viewer_dashboard' %}" class="text-small" style="color:#1a4fd6;">View all</a>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Title</th><th>By</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+          {% for asset in recent_assets %}
+          <tr>
+            <td>
+              <a href="{% url 'media:media_detail' asset.pk %}" style="font-weight:500;color:#1a4fd6;text-decoration:none;">
+                {% if asset.file_type == 'video' %}🎬 {% elif asset.file_type == 'image' %}🖼️ {% elif asset.file_type == 'audio' %}🎵 {% else %}📄 {% endif %}{{ asset.title }}
+              </a>
+            </td>
+            <td class="text-small text-muted">{{ asset.uploaded_by.email }}</td>
+            <td>
+              {% if asset.status == 'published' %}<span class="badge badge--green">Published</span>
+              {% elif asset.status == 'draft' %}<span class="badge badge--amber">Draft</span>
+              {% else %}<span class="badge badge--neutral">{{ asset.get_status_display }}</span>{% endif %}
+            </td>
+            <td>
+              <div style="display:flex;gap:6px;">
+                <a href="{% url 'media:media_detail' asset.pk %}" class="btn btn--sm btn--outline">Preview</a>
+                {% if asset.status == 'draft' %}
+                <form method="post" action="{% url 'media:publish_media' asset.pk %}" style="display:inline">
+                  {% csrf_token %}<button type="submit" class="btn btn--sm btn--primary">Publish</button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-muted text-center" style="padding:24px;">No uploads yet</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Recent users -->
+    <div>
+      <div class="page__header flex-between mb-16">
+        <h3>Recent users</h3>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>User</th><th>Role</th><th>Joined</th></tr></thead>
+          <tbody>
+          {% for u in recent_users %}
+          <tr>
+            <td>
+              <div style="font-weight:500;font-size:0.88rem;">{{ u.full_name }}</div>
+              <div class="text-small text-muted">{{ u.email }}</div>
+            </td>
+            <td><span class="badge badge--neutral">{{ u.get_role_display }}</span></td>
+            <td class="text-small text-muted">{{ u.date_joined|date:"M j, Y" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" class="text-muted text-center" style="padding:24px;">No users</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

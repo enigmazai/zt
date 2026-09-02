@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Browse Media — MediaPlatform{% endblock %}
+{% block extra_css %}
+<style>
+.media-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px; }
+.media-card { background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;text-decoration:none;color:inherit;transition:transform 0.15s,box-shadow 0.15s;display:block; }
+.media-card:hover { transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.1); }
+.media-card__thumb { aspect-ratio:16/9;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:2.4rem;position:relative;overflow:hidden; }
+.media-card__thumb img { width:100%;height:100%;object-fit:cover; }
+.media-card__thumb video { width:100%;height:100%;object-fit:cover;pointer-events:none; }
+.play-overlay { position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center; }
+.media-card__body { padding:14px 16px; }
+.media-card__title { font-size:0.9rem;font-weight:600;color:#0d1321;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.media-card__meta  { font-size:0.76rem;color:#9ca3af;display:flex;gap:10px; }
+.type-dot { display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px; }
+.dot-video{background:#0369a1;}.dot-image{background:#15803d;}.dot-audio{background:#7e22ce;}.dot-doc{background:#c2410c;}
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="nav">
+  <div class="nav__brand">Media<span style="color:#1a4fd6">Platform</span></div>
+  <div class="nav__links">
+    <a href="{% url 'media:viewer_dashboard' %}" class="nav__link nav__link--active">Browse</a>
+    <a href="{% url 'accounts:profile' %}"        class="nav__link">Profile</a>
+    <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">
+      {% csrf_token %}<button type="submit" class="btn btn--ghost btn--sm">Sign out</button>
+    </form>
+  </div>
+</nav>
+
+<div class="container page">
+  <div class="page__header flex-between mb-24">
+    <div>
+      <h1 class="page__title">Browse media</h1>
+      <p>Discover published content</p>
+    </div>
+  </div>
+
+  <!-- Search + filter -->
+  <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px;">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search title, description, tags…"
+      style="padding:9px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:0.87rem;width:280px;outline:none;"/>
+    <select name="type" style="padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:0.87rem;outline:none;" onchange="this.form.submit()">
+      <option value="">All types</option>
+      <option value="video" {% if ftype == 'video' %}selected{% endif %}>🎬 Video</option>
+      <option value="image" {% if ftype == 'image' %}selected{% endif %}>🖼 Image</option>
+      <option value="audio" {% if ftype == 'audio' %}selected{% endif %}>🎵 Audio</option>
+      <option value="raw"   {% if ftype == 'raw'   %}selected{% endif %}>📄 Document</option>
+    </select>
+    <button type="submit" class="btn btn--outline btn--sm">Search</button>
+    {% if q or ftype %}<a href="{% url 'media:viewer_dashboard' %}" class="btn btn--ghost btn--sm">Clear</a>{% endif %}
+  </form>
+
+  {% if assets %}
+  <div class="media-grid">
+    {% for asset in assets %}
+    <a href="{% url 'media:media_detail' asset.pk %}" class="media-card">
+      <div class="media-card__thumb">
+        {% if asset.file_type == 'video' %}
+          <div style="background:#0d1117;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+            <span style="font-size:2rem;">🎬</span>
+          </div>
+          <div class="play-overlay">
+            <svg width="16" height="16" fill="white" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </div>
+        {% elif asset.file_type == 'image' %}
+          <img src="{{ asset.delivery_url }}" alt="{{ asset.title }}" loading="lazy"/>
+        {% elif asset.file_type == 'audio' %}
+          <div style="background:#2d1b69;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.2rem;">🎵</div>
+        {% else %}
+          <div style="background:#1c1917;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.2rem;">📄</div>
+        {% endif %}
+      </div>
+      <div class="media-card__body">
+        <div class="media-card__title">{{ asset.title }}</div>
+        <div class="media-card__meta">
+          <span>
+            {% if asset.file_type == 'video' %}<span class="type-dot dot-video"></span>Video
+            {% elif asset.file_type == 'image' %}<span class="type-dot dot-image"></span>Image
+            {% elif asset.file_type == 'audio' %}<span class="type-dot dot-audio"></span>Audio
+            {% else %}<span class="type-dot dot-doc"></span>Document{% endif %}
+          </span>
+          <span>{{ asset.view_count }} view{{ asset.view_count|pluralize }}</span>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;padding:64px 40px;">
+    <div style="font-size:3rem;margin-bottom:16px;">🔍</div>
+    <h3>No media found</h3>
+    <p class="mt-8">Try a different search or check back later.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

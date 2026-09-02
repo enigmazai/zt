@@ -1,0 +1,399 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ asset.title }} — MediaPlatform{% endblock %}
+
+{% block extra_css %}
+<style>
+  .preview-container {
+    background: #0d1117;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    position: relative;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Video player */
+  .preview-container video {
+    width: 100%;
+    max-height: 520px;
+    display: block;
+    border-radius: 16px;
+  }
+
+  /* Image viewer */
+  .preview-container img {
+    max-width: 100%;
+    max-height: 600px;
+    object-fit: contain;
+    border-radius: 16px;
+    display: block;
+    margin: 0 auto;
+  }
+
+  /* Audio player */
+  .audio-wrap {
+    padding: 40px 24px;
+    text-align: center;
+    width: 100%;
+  }
+
+  .audio-icon {
+    font-size: 3.5rem;
+    margin-bottom: 16px;
+  }
+
+  .preview-container audio {
+    width: 100%;
+    max-width: 520px;
+  }
+
+  /* PDF / document viewer */
+  .preview-container iframe {
+    width: 100%;
+    height: 640px;
+    border: none;
+    border-radius: 16px;
+  }
+
+  /* Fallback */
+  .preview-fallback {
+    padding: 60px 24px;
+    text-align: center;
+    color: #6b7280;
+  }
+
+  .preview-fallback .icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+  }
+
+  /* Controls bar below preview */
+  .media-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 0 24px;
+  }
+
+  .media-bar__left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .media-bar__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ink, #0d1321);
+  }
+
+  .media-bar__meta {
+    font-size: 0.82rem;
+    color: #6b7280;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .media-bar__actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-dl {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    background: #1a4fd6;
+    color: #fff;
+    font-size: 0.88rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .btn-dl:hover {
+    background: #1640b0;
+    transform: translateY(-1px);
+  }
+
+  .btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    background: transparent;
+    color: #6b7280;
+    font-size: 0.88rem;
+    font-weight: 500;
+    border: 1.5px solid #e2e8f0;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+
+  .btn-back:hover {
+    border-color: #1a4fd6;
+    color: #1a4fd6;
+  }
+
+  .info-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 18px;
+  }
+
+  .info-card h3 {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #0d1321;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .tag {
+    padding: 4px 12px;
+    background: #eff4ff;
+    color: #1a4fd6;
+    border-radius: 100px;
+    font-size: 0.76rem;
+    font-weight: 600;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+  }
+
+  .meta-item label {
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 3px;
+  }
+
+  .meta-item span {
+    font-size: 0.88rem;
+    color: #0d1321;
+    font-weight: 500;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="nav">
+  <div class="nav__brand">Media<span style="color:#1a4fd6">Platform</span></div>
+  <div class="nav__links">
+    <a href="{% url 'media:dashboard' %}" class="nav__link">← Dashboard</a>
+    {% if request.user == asset.uploaded_by or request.user.is_admin %}
+    <a href="{% url 'media:edit_media' asset.pk %}" class="btn btn--outline btn--sm">Edit</a>
+    {% endif %}
+    {% if request.user.is_admin and asset.status == 'draft' %}
+    <form method="post" action="{% url 'media:publish_media' asset.pk %}" style="display:inline">
+      {% csrf_token %}<button type="submit" class="btn btn--primary btn--sm">Publish</button>
+    </form>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="container page" style="max-width:900px;">
+
+  <!-- ── File preview ── -->
+  <div class="preview-container">
+    {% if asset.file_type == 'video' %}
+    {% if asset.file_format == 'mp4' or asset.file_format == 'webm' or asset.file_format == 'ogg' %}
+    <video controls preload="metadata" style="width:100%;max-height:520px;border-radius:16px;">
+      <source src="{{ preview_url }}" />
+      Your browser does not support the video element.
+    </video>
+    {% else %}
+    <div class="preview-fallback">
+      <div class="icon">🎬</div>
+      <p style="color:#9ca3af;margin-bottom:16px;">This video format cannot be previewed in your browser.</p>
+      <a href="{{ download_url }}" class="btn-dl" download>Download video</a>
+    </div>
+    {% endif %}
+
+    {% elif asset.file_type == 'image' %}
+    <img src="{{ preview_url }}" alt="{{ asset.title }}"
+      style="max-width:100%;max-height:600px;object-fit:contain;border-radius:16px;background:#fff;" />
+
+    {% elif asset.file_type == 'audio' %}
+    <div class="audio-wrap">
+      <div class="audio-icon">🎵</div>
+      <p style="color:#e5e7eb;font-weight:600;margin-bottom:20px;">{{ asset.title }}</p>
+      <audio controls preload="metadata" style="width:100%;max-width:520px;">
+        <source src="{{ preview_url }}" />
+        Your browser does not support the audio element.
+      </audio>
+    </div>
+
+    {% elif asset.file_type == 'raw' or asset.file_type == 'document' %}
+    {% with file_url=preview_url %}
+    {% if file_url and '.pdf' in file_url|lower %}
+    <iframe src="{{ file_url }}" title="{{ asset.title }}"></iframe>
+    {% elif file_url %}
+    {# Use Google Docs viewer for common document types (DOCX, PPTX, XLSX, etc.) #}
+    <iframe src="https://docs.google.com/gview?url={{ file_url|urlencode }}&embedded=true" title="{{ asset.title }}"
+      style="width:100%;height:640px;border:0;" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
+    <noscript>
+      <div class="preview-fallback">
+        <div class="icon">📄</div>
+        <p style="color:#9ca3af;margin-bottom:16px;">Preview not available. Enable JavaScript or download the file to
+          view it.</p>
+        <a href="{{ download_url }}" class="btn-dl">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Download to view
+        </a>
+      </div>
+    </noscript>
+    {% else %}
+    <div class="preview-fallback">
+      <div class="icon">📄</div>
+      <p style="color:#9ca3af;margin-bottom:16px;">Preview not available for this file type.</p>
+      <a href="{{ download_url }}" class="btn-dl" download>
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        Download to view
+      </a>
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {% else %}
+    <div class="preview-fallback">
+      <div class="icon">📁</div>
+      <p style="color:#9ca3af;">No preview available.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Title + actions bar ── -->
+  <div class="media-bar">
+    <div class="media-bar__left">
+      <div class="media-bar__title">{{ asset.title }}</div>
+      <div class="media-bar__meta">
+        <span>{{ meta.icon }} {{ meta.label }}</span>
+        <span>{{ asset.file_size_display }}</span>
+        <span>{{ asset.view_count }} view{{ asset.view_count|pluralize }}</span>
+        <span>{{ asset.created_at|date:"M j, Y" }}</span>
+        {% if asset.duration %}<span>{{ asset.duration|floatformat:0 }}s</span>{% endif %}
+      </div>
+    </div>
+    <div class="media-bar__actions">
+      {% if asset.file %}
+      <a href="{{ download_url }}" class="btn-dl">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        Download
+      </a>
+      {% endif %}
+      <a href="{% url 'media:dashboard' %}" class="btn-back">← Back</a>
+    </div>
+  </div>
+
+  <!-- ── Description ── -->
+  {% if asset.description %}
+  <div class="info-card">
+    <h3>Description</h3>
+    <p style="font-size:0.92rem;color:#374151;line-height:1.75;">{{ asset.description }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ── Tags ── -->
+  {% if asset.tag_list %}
+  <div class="info-card">
+    <h3>Tags</h3>
+    <div class="tag-list">
+      {% for tag in asset.tag_list %}<span class="tag">{{ tag }}</span>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Metadata ── -->
+  <div class="info-card">
+    <h3>File information</h3>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <label>Uploaded by</label>
+        <span>{{ asset.uploaded_by.full_name }}</span>
+      </div>
+      <div class="meta-item">
+        <label>File type</label>
+        <span>{{ meta.label }}</span>
+      </div>
+      <div class="meta-item">
+        <label>File size</label>
+        <span>{{ asset.file_size_display }}</span>
+      </div>
+      <div class="meta-item">
+        <label>Status</label>
+        <span>{{ asset.get_status_display }}</span>
+      </div>
+      <div class="meta-item">
+        <label>Visibility</label>
+        <span>{{ asset.get_visibility_display }}</span>
+      </div>
+      {% if asset.category %}
+      <div class="meta-item">
+        <label>Category</label>
+        <span>{{ asset.category.name }}</span>
+      </div>
+      {% endif %}
+      {% if asset.published_at %}
+      <div class="meta-item">
+        <label>Published</label>
+        <span>{{ asset.published_at|date:"M j, Y" }}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Admin actions -->
+  {% if can_delete %}
+  <div style="padding-top:8px;">
+    <form method="post" action="{% url 'media:delete_media' asset.pk %}"
+      onsubmit="return confirm('Permanently delete this asset?')">
+      {% csrf_token %}
+      <button type="submit"
+        style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:0.84rem;font-weight:500;">
+        Delete this asset
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

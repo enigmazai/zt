@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}My Uploads — MediaPlatform{% endblock %}
+
+{% block extra_css %}
+<style>
+.upload-cta {
+  display:flex; align-items:center; gap:14px;
+  padding:20px 24px; border-radius:16px;
+  background:linear-gradient(135deg,#1a4fd6 0%,#162e8a 100%);
+  color:#fff; margin-bottom:28px; text-decoration:none;
+  transition:transform 0.15s,box-shadow 0.15s;
+  box-shadow:0 6px 24px rgba(26,79,214,0.3);
+}
+.upload-cta:hover { transform:translateY(-2px); box-shadow:0 10px 32px rgba(26,79,214,0.4); }
+.upload-cta-icon {
+  width:48px;height:48px;border-radius:12px;
+  background:rgba(255,255,255,0.18);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.4rem;
+}
+.upload-cta-text strong { display:block;font-size:1rem;font-weight:700;margin-bottom:2px; }
+.upload-cta-text span { font-size:0.83rem;opacity:0.75; }
+.upload-cta-arrow { margin-left:auto;font-size:1.4rem;opacity:0.7; }
+
+.type-badge { display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:100px;font-size:0.72rem;font-weight:600; }
+.type-video   { background:#e0f2fe;color:#0369a1; }
+.type-image   { background:#f0fdf4;color:#15803d; }
+.type-audio   { background:#faf5ff;color:#7e22ce; }
+.type-raw,.type-document { background:#fff7ed;color:#c2410c; }
+
+.filter-bar { display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center; }
+.filter-bar input { padding:8px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:0.87rem;width:220px;outline:none; }
+.filter-bar input:focus { border-color:#1a4fd6; }
+.filter-select { padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:0.87rem;outline:none;cursor:pointer; }
+.asset-thumb { width:44px;height:34px;border-radius:6px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0; }
+.preview-link { color:#1a4fd6;font-weight:500;font-size:0.87rem;text-decoration:none; }
+.preview-link:hover { text-decoration:underline; }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="nav">
+  <div class="nav__brand">
+    <svg width="20" height="20" viewBox="0 0 32 32" fill="none" style="display:inline-block;vertical-align:-4px;margin-right:8px">
+      <rect width="32" height="32" rx="8" fill="#1a4fd6"/>
+      <rect x="8" y="8" width="7" height="7" rx="2" fill="white"/>
+      <rect x="17" y="8" width="7" height="7" rx="2" fill="white" opacity=".7"/>
+      <rect x="8" y="17" width="7" height="7" rx="2" fill="white" opacity=".7"/>
+      <rect x="17" y="17" width="7" height="7" rx="2" fill="white" opacity=".4"/>
+    </svg>
+    Media<span style="color:#1a4fd6">Platform</span>
+  </div>
+  <div class="nav__links">
+    <a href="{% url 'media:uploader_dashboard' %}" class="nav__link nav__link--active">My Uploads</a>
+    <a href="{% url 'media:viewer_dashboard' %}"   class="nav__link">Browse</a>
+    <a href="{% url 'accounts:profile' %}"          class="nav__link">Profile</a>
+    <a href="{% url 'media:upload' %}" class="btn btn--primary btn--sm">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+      Upload
+    </a>
+    <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">
+      {% csrf_token %}<button type="submit" class="btn btn--ghost btn--sm">Sign out</button>
+    </form>
+  </div>
+</nav>
+
+<div class="container page">
+
+  <!-- Prominent upload CTA -->
+  <a href="{% url 'media:upload' %}" class="upload-cta">
+    <div class="upload-cta-icon">☁️</div>
+    <div class="upload-cta-text">
+      <strong>Upload a new file</strong>
+      <span>Video, image, audio, PDF, documents — up to {{ 500 }} MB</span>
+    </div>
+    <div class="upload-cta-arrow">→</div>
+  </a>
+
+  <!-- Page header -->
+  <div class="page__header flex-between mb-24">
+    <div>
+      <h1 class="page__title">My uploads</h1>
+      <p>Manage your media · <span class="badge badge--teal">{{ request.user.get_role_display }}</span></p>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid-4 mb-24">
+    <div class="card stat"><div class="stat__label">Total</div><div class="stat__value">{{ stats.total }}</div></div>
+    <div class="card stat"><div class="stat__label">Published</div><div class="stat__value" style="color:#15803d">{{ stats.published }}</div></div>
+    <div class="card stat"><div class="stat__label">Drafts</div><div class="stat__value" style="color:#c2410c">{{ stats.drafts }}</div></div>
+    <div class="card stat"><div class="stat__label">Total views</div><div class="stat__value">{{ stats.total_views }}</div></div>
+  </div>
+
+  <!-- File type breakdown -->
+  <div class="grid-4 mb-28">
+    <div class="card" style="padding:16px 20px;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:1.6rem;">🎬</span>
+      <div><div style="font-size:1.2rem;font-weight:700;">{{ stats.videos }}</div><div class="text-small text-muted">Videos</div></div>
+    </div>
+    <div class="card" style="padding:16px 20px;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:1.6rem;">🖼️</span>
+      <div><div style="font-size:1.2rem;font-weight:700;">{{ stats.images }}</div><div class="text-small text-muted">Images</div></div>
+    </div>
+    <div class="card" style="padding:16px 20px;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:1.6rem;">🎵</span>
+      <div><div style="font-size:1.2rem;font-weight:700;">{{ stats.audio }}</div><div class="text-small text-muted">Audio</div></div>
+    </div>
+    <div class="card" style="padding:16px 20px;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:1.6rem;">📄</span>
+      <div><div style="font-size:1.2rem;font-weight:700;">{{ stats.docs }}</div><div class="text-small text-muted">Documents</div></div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <form method="get" class="filter-bar">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search by title or tag…"/>
+    <select name="status" class="filter-select" onchange="this.form.submit()">
+      <option value="">All statuses</option>
+      <option value="draft"     {% if status_filter == 'draft' %}selected{% endif %}>Draft</option>
+      <option value="published" {% if status_filter == 'published' %}selected{% endif %}>Published</option>
+      <option value="archived"  {% if status_filter == 'archived' %}selected{% endif %}>Archived</option>
+    </select>
+    <select name="type" class="filter-select" onchange="this.form.submit()">
+      <option value="">All types</option>
+      <option value="video" {% if type_filter == 'video' %}selected{% endif %}>Video</option>
+      <option value="image" {% if type_filter == 'image' %}selected{% endif %}>Image</option>
+      <option value="audio" {% if type_filter == 'audio' %}selected{% endif %}>Audio</option>
+      <option value="raw"   {% if type_filter == 'raw'   %}selected{% endif %}>Document</option>
+    </select>
+    <button type="submit" class="btn btn--outline btn--sm">Filter</button>
+    {% if q or status_filter or type_filter %}
+    <a href="{% url 'media:uploader_dashboard' %}" class="btn btn--ghost btn--sm">Clear</a>
+    {% endif %}
+  </form>
+
+  <!-- Assets table -->
+  {% if uploads %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:44px"></th>
+          <th>Title</th>
+          <th>Type</th>
+          <th>Size</th>
+          <th>Status</th>
+          <th>Views</th>
+          <th>Date</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for asset in uploads %}
+      <tr>
+        <td>
+          <div class="asset-thumb">
+            {% if asset.file_type == 'video' %}🎬
+            {% elif asset.file_type == 'image' %}🖼️
+            {% elif asset.file_type == 'audio' %}🎵
+            {% else %}📄{% endif %}
+          </div>
+        </td>
+        <td>
+          <a href="{% url 'media:media_detail' asset.pk %}" class="preview-link">{{ asset.title }}</a>
+          {% if asset.tags %}<div class="text-small text-muted" style="margin-top:2px;">{{ asset.tags }}</div>{% endif %}
+        </td>
+        <td>
+          <span class="type-badge type-{{ asset.file_type|default:'raw' }}">
+            {% if asset.file_type == 'video' %}🎬 Video
+            {% elif asset.file_type == 'image' %}🖼 Image
+            {% elif asset.file_type == 'audio' %}🎵 Audio
+            {% else %}📄 Doc{% endif %}
+          </span>
+        </td>
+        <td class="text-small text-muted">{{ asset.file_size_display }}</td>
+        <td>
+          {% if asset.status == 'published' %}<span class="badge badge--green">Published</span>
+          {% elif asset.status == 'draft' %}<span class="badge badge--amber">Draft</span>
+          {% else %}<span class="badge badge--neutral">{{ asset.get_status_display }}</span>{% endif %}
+        </td>
+        <td class="text-small">{{ asset.view_count }}</td>
+        <td class="text-small text-muted">{{ asset.created_at|date:"M j, Y" }}</td>
+        <td>
+          <div style="display:flex;gap:6px;justify-content:flex-end;">
+            <a href="{% url 'media:media_detail' asset.pk %}" class="btn btn--sm btn--outline">Preview</a>
+            <a href="{% url 'media:edit_media' asset.pk %}"   class="btn btn--sm btn--ghost">Edit</a>
+            <form method="post" action="{% url 'media:delete_media' asset.pk %}"
+                  onsubmit="return confirm('Delete this asset?')" style="display:inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn--sm btn--ghost" style="color:#dc2626;">Del</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;padding:64px 40px;">
+    <div style="font-size:3rem;margin-bottom:16px;">📂</div>
+    <h3>No uploads yet</h3>
+    <p class="mt-8">Get started by uploading your first file.</p>
+    <a href="{% url 'media:upload' %}" class="btn btn--primary mt-16">
+      Upload your first file
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
