@@ -3,6 +3,7 @@ dj-database-url==2.3.0
 djangorestframework==3.17.1
 djangorestframework-simplejwt==5.5.1
 django-allauth==65.18.0
+cryptography==46.0.1
 django-otp==1.7.0
 django-widget-tweaks==1.5.1
 cloudinary==1.40.0
