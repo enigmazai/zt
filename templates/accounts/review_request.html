@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Review Request — MediaPlatform{% endblock %}
+{% block body %}
+<nav class="nav">
+  <div class="nav__brand">Media<span style="color:#1a56db">Platform</span></div>
+  <div class="nav__links"><a href="{% url 'accounts:role_requests' %}" class="nav__link">← Requests</a></div>
+</nav>
+<div class="container page" style="max-width:560px;">
+  <h1 class="page__title mb-24">Review role request</h1>
+  <div class="card mb-20">
+    <p><strong>{{ rr.user.full_name }}</strong> ({{ rr.user.email }}) requesting <strong>{{ rr.requested_role }}</strong></p>
+    {% if rr.reason %}<p style="margin-top:12px;padding:12px;background:#f8fafc;border-radius:8px;font-size:0.88rem;">{{ rr.reason }}</p>{% endif %}
+  </div>
+  <div class="card">
+    <form method="post">{% csrf_token %}
+      <div class="field mb-16"><label>Review note (optional)</label>{{ form.review_note }}</div>
+      <div style="display:flex;gap:10px;">
+        <button type="submit" name="action" value="approved" class="btn btn--primary">✓ Approve</button>
+        <button type="submit" name="action" value="rejected" class="btn btn--outline" style="color:#dc2626;border-color:#dc2626;">✗ Reject</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

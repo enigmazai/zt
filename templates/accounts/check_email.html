@@ -1,0 +1,29 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Check your email — MediaPlatform</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="{% static 'css/theme.css' %}"/>
+</head>
+<body>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg);">
+  <div class="card card-shadow" style="max-width:440px;width:100%;text-align:center;padding:48px 36px;">
+    <div style="width:64px;height:64px;background:var(--accent-light);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:1.8rem;">📧</div>
+    <h2 style="margin-bottom:10px;">Check your inbox</h2>
+    <p style="color:var(--ink-3);font-size:0.9rem;line-height:1.7;">We sent a verification link to your email address. Click it to activate your account.</p>
+    <div style="margin:24px 0;padding:14px;background:var(--bg-3);border-radius:10px;font-size:0.82rem;color:var(--ink-3);">
+      Didn't receive it? Check your spam folder or request a new link below.
+    </div>
+    <form method="post" action="{% url 'accounts:resend_verification' %}">
+      {% csrf_token %}
+      <input type="email" name="email" placeholder="Enter your email" required
+        style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);font-size:0.9rem;outline:none;margin-bottom:10px;"/>
+      <button type="submit" class="btn btn-outline btn-full">Resend verification email</button>
+    </form>
+    <div style="margin-top:20px;">
+      <a href="{% url 'accounts:auth' %}" style="font-size:0.84rem;color:var(--ink-3);">← Back to login</a>
+    </div>
+  </div>
+</div>
+</body></html>
+

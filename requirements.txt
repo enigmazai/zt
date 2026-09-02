@@ -1,0 +1,14 @@
+Django==4.2.30
+djangorestframework==3.17.1
+djangorestframework-simplejwt==5.5.1
+django-allauth==65.18.0
+django-otp==1.7.0
+django-widget-tweaks==1.5.1
+cloudinary==1.40.0
+django-cloudinary-storage==0.3.0
+python-dotenv==1.2.2
+qrcode==8.2
+dnspython==2.8.0
+Pillow==10.3.0
+gunicorn==26.0.0
+whitenoise==6.12.0

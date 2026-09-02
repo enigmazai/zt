@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Profile — MediaPlatform{% endblock %}
+{% block body %}
+<nav class="nav">
+  <div class="nav__brand">Media<span style="color:#1a56db">Platform</span></div>
+  <div class="nav__links">
+    <a href="{% url 'media:dashboard' %}" class="nav__link">Dashboard</a>
+    <a href="{% url 'accounts:profile' %}" class="nav__link nav__link--active">Profile</a>
+    <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">{% csrf_token %}<button type="submit" class="btn btn--ghost btn--sm">Sign out</button></form>
+  </div>
+</nav>
+<div class="container page" style="max-width:680px;">
+  <h1 class="page__title mb-24">Account profile</h1>
+
+  {% if messages %}{% for msg in messages %}
+  <div class="card mb-16" style="border-left:3px solid #22c55e;padding:12px 16px;"><p>{{ msg }}</p></div>
+  {% endfor %}{% endif %}
+
+  <!-- Info card -->
+  <div class="card mb-20">
+    <div style="display:flex;align-items:center;gap:18px;margin-bottom:20px;">
+      <div style="width:56px;height:56px;border-radius:50%;background:#1a56db;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;flex-shrink:0;">
+        {{ user.full_name|first|upper|default:user.email|first|upper }}
+      </div>
+      <div>
+        <h3>{{ user.full_name|default:user.email }}</h3>
+        <p class="text-small text-muted">{{ user.email }}</p>
+      </div>
+      <span class="badge badge--teal" style="margin-left:auto;">{{ user.get_role_display }}</span>
+    </div>
+    <div class="grid-2" style="gap:12px;">
+      <div style="padding:12px 16px;background:#f8fafc;border-radius:10px;">
+        <div class="text-small text-muted">Member since</div>
+        <div style="font-weight:500;margin-top:2px;">{{ user.date_joined|date:"M j, Y" }}</div>
+      </div>
+      <div style="padding:12px 16px;background:#f8fafc;border-radius:10px;">
+        <div class="text-small text-muted">MFA</div>
+        <div style="font-weight:500;margin-top:2px;">
+          {% if user.is_mfa_enabled %}<span style="color:#15803d;">✓ Enabled</span>{% else %}<span style="color:#94a3b8;">Not enabled</span>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MFA card -->
+  <div class="card mb-20">
+    <h3 style="margin-bottom:14px;">Two-factor authentication</h3>
+    {% if user.is_mfa_enabled %}
+    <p style="font-size:0.88rem;margin-bottom:16px;">MFA is active on your account. Your TOTP authenticator app is linked.</p>
+    <form method="post" action="{% url 'accounts:mfa_disable' %}" onsubmit="return confirm('Disable MFA? This reduces your account security.')">
+      {% csrf_token %}
+      <button type="submit" class="btn btn--outline btn--sm" style="color:#dc2626;border-color:#dc2626;">Disable MFA</button>
+    </form>
+    {% else %}
+    <p style="font-size:0.88rem;margin-bottom:16px;">Add an extra layer of security. You'll need an authenticator app like Google Authenticator or Authy.</p>
+    <a href="{% url 'accounts:mfa_setup' %}" class="btn btn--primary btn--sm">Enable MFA</a>
+    {% endif %}
+  </div>
+
+  <!-- Role request -->
+  {% if user.role in 'viewer,uploader' or user.role == 'viewer' or user.role == 'uploader' %}
+  <div class="card mb-20">
+    <h3 style="margin-bottom:10px;">Request elevated access</h3>
+    <p style="font-size:0.88rem;margin-bottom:14px;">Need Admin or Super Admin access? Submit a request — a Super Admin will review it.</p>
+    {% if user.role_request %}
+    <div style="padding:10px 14px;background:#eff6ff;border-radius:8px;font-size:0.84rem;color:#1e40af;">
+      Request for <strong>{{ user.role_request.requested_role }}</strong> is <strong>{{ user.role_request.status }}</strong>.
+    </div>
+    {% else %}
+    <a href="{% url 'accounts:request_role' %}" class="btn btn--outline btn--sm">Request role upgrade</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- JWT token display -->
+  <div class="card">
+    <h3 style="margin-bottom:10px;">API access token</h3>
+    <p style="font-size:0.88rem;margin-bottom:14px;">Use JWT tokens to access the REST API at <code>/api/</code></p>
+    {% if tokens %}
+    <div style="background:#0f172a;border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;">Access Token (30 min)</div>
+      <div style="font-family:monospace;font-size:0.72rem;color:#86efac;word-break:break-all;">{{ tokens.access }}</div>
+    </div>
+    {% endif %}
+    <a href="?show_token=1" class="btn btn--outline btn--sm">Generate API token</a>
+  </div>
+
+</div>
+{% endblock %}

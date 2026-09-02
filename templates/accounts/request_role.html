@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Request Role — MediaPlatform{% endblock %}
+{% block body %}
+<nav class="nav">
+  <div class="nav__brand">Media<span style="color:#1a56db">Platform</span></div>
+  <div class="nav__links"><a href="{% url 'accounts:profile' %}" class="nav__link">← Profile</a></div>
+</nav>
+<div class="container page" style="max-width:560px;">
+  <h1 class="page__title mb-8">Request role upgrade</h1>
+  <p class="mb-24">A Super Admin will review your request and notify you by email.</p>
+  <div class="card">
+    <form method="post">{% csrf_token %}
+      <div class="stack-24">
+        <div class="field"><label>Requested role</label>{{ form.requested_role }}</div>
+        <div class="field"><label>Reason</label>{{ form.reason }}</div>
+      </div>
+      <button type="submit" class="btn btn--primary mt-24">Submit request</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

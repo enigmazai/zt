@@ -1,0 +1,136 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Verify your identity — MediaPlatform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'css/theme.css' %}" />
+  <style>
+    .otp-wrap {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .otp-digit {
+      width: 48px;
+      height: 56px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--ink);
+      font-size: 1.5rem;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .otp-digit:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+  </style>
+</head>
+
+<body>
+  <div
+    style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#1e40af 0%,#1e3a8a 100%);">
+    <div class="card card-shadow" style="max-width:400px;width:100%;padding:40px 36px;text-align:center;">
+
+      <div
+        style="width:56px;height:56px;background:var(--accent-light);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:1.6rem;">
+        🔐</div>
+      <h2 style="margin-bottom:8px;">Verify your identity</h2>
+      <p style="font-size:0.87rem;color:var(--ink-3);line-height:1.6;">
+        We sent a 6-digit code to<br />
+        <strong style="color:var(--ink);">{{ masked_email }}</strong><br />
+        <span style="font-size:0.78rem;">Valid for 10 minutes.</span>
+      </p>
+
+      {% if messages %}{% for msg in messages %}
+      <div
+        style="padding:10px 14px;background:var(--amber-light);color:var(--amber);border-radius:8px;font-size:0.84rem;margin:14px 0;">
+        {{ msg }}</div>
+      {% endfor %}{% endif %}
+
+      {% if form.otp.errors %}
+      <div
+        style="padding:10px 14px;background:var(--red-light);color:var(--red);border-radius:8px;font-size:0.84rem;margin:14px 0;">
+        {{ form.otp.errors.0 }}
+      </div>
+      {% endif %}
+
+      <form method="post" id="otpForm">
+        {% csrf_token %}
+        <!-- Individual digit boxes for UX — submits as one hidden field -->
+        <div class="otp-wrap" id="digitBoxes">
+          <input class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" data-index="0" />
+          <input class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" data-index="1" />
+          <input class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" data-index="2" />
+          <input class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" data-index="3" />
+          <input class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" data-index="4" />
+          <input class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" data-index="5" />
+        </div>
+        <input type="hidden" name="otp" id="otpHidden" />
+        <button type="submit" class="btn btn-primary btn-full" id="verifyBtn" disabled>Verify code</button>
+      </form>
+
+      <div style="margin-top:20px;display:flex;gap:16px;justify-content:center;font-size:0.83rem;">
+        <form method="post" action="{% url 'accounts:resend_login_otp' %}" style="display:inline">
+          {% csrf_token %}
+          <button type="submit"
+            style="background:none;border:none;cursor:pointer;color:var(--accent);font-size:0.83rem;font-weight:500;">Resend
+            code</button>
+        </form>
+        <a href="{% url 'accounts:auth' %}" style="color:var(--ink-3);">← Back to login</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const digits = Array.from(document.querySelectorAll('.otp-digit'));
+    const hidden = document.getElementById('otpHidden');
+    const btn = document.getElementById('verifyBtn');
+
+    function updateHidden() {
+      const val = digits.map(d => d.value).join('');
+      hidden.value = val;
+      btn.disabled = val.length < 6;
+    }
+
+    digits.forEach((d, i) => {
+      d.addEventListener('input', e => {
+        // Accept only digits
+        d.value = d.value.replace(/\D/g, '').slice(-1);
+        updateHidden();
+        if (d.value && i < 5) digits[i + 1].focus();
+        // Auto-submit when all filled
+        if (digits.every(x => x.value)) document.getElementById('otpForm').submit();
+      });
+      d.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && !d.value && i > 0) {
+          digits[i - 1].value = '';
+          digits[i - 1].focus();
+          updateHidden();
+        }
+      });
+      d.addEventListener('paste', e => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+        [...text.slice(0, 6)].forEach((ch, idx) => { if (digits[idx]) digits[idx].value = ch; });
+        updateHidden();
+        const next = Math.min(text.length, 5);
+        digits[next].focus();
+        if (digits.every(x => x.value)) document.getElementById('otpForm').submit();
+      });
+    });
+    digits[0].focus();
+  </script>
+</body>
+
+</html>

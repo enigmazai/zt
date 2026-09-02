@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Pending Approval — MediaPlatform{% endblock %}
+{% block body %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#faf9f6;">
+  <div class="card" style="max-width:440px;width:100%;text-align:center;padding:48px 40px;">
+    <div style="width:56px;height:56px;background:#fef3e8;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+      <svg width="24" height="24" fill="none" stroke="#b5601a" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <h2>Account pending approval</h2>
+    <p style="margin-top:12px;">Your account has been created but requires Super Admin approval before you can access the platform.</p>
+    <p style="margin-top:8px;font-size:0.85rem;color:#8a8885;">You'll receive an email notification once your account is reviewed.</p>
+    <form method="post" action="{% url 'accounts:logout' %}" style="margin-top:28px;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn--outline btn--full">Sign out</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

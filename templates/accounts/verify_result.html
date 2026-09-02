@@ -1,0 +1,25 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Email Verification — MediaPlatform</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="{% static 'css/theme.css' %}"/>
+</head>
+<body>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg);">
+  <div class="card card-shadow" style="max-width:420px;width:100%;text-align:center;padding:48px 36px;">
+    {% if success %}
+    <div style="font-size:3rem;margin-bottom:16px;">✅</div>
+    <h2 style="color:var(--green);margin-bottom:10px;">Email verified!</h2>
+    <p style="color:var(--ink-3);font-size:0.9rem;">{{ message }}</p>
+    <a href="{% url 'accounts:auth' %}" class="btn btn-primary btn-full" style="margin-top:24px;display:block;">Sign in to your account</a>
+    {% else %}
+    <div style="font-size:3rem;margin-bottom:16px;">❌</div>
+    <h2 style="color:var(--red);margin-bottom:10px;">Verification failed</h2>
+    <p style="color:var(--ink-3);font-size:0.9rem;">{{ message }}</p>
+    <a href="{% url 'accounts:resend_verification' %}" class="btn btn-outline btn-full" style="margin-top:24px;display:block;">Request a new link</a>
+    <div style="margin-top:14px;"><a href="{% url 'accounts:auth' %}" style="font-size:0.84rem;color:var(--ink-3);">← Back to login</a></div>
+    {% endif %}
+  </div>
+</div>
+</body></html>

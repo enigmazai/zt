@@ -1,0 +1,6 @@
+{% extends 'admin/base.html' %}
+{% load i18n %}
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{% trans 'Site administration' %}</a></h1>
+<div style="margin-top:6px;"><a href="/admin/audit-dashboard/">Audit Logs</a></div>
+{% endblock %}

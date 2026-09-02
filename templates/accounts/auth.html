@@ -1,0 +1,316 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediaPlatform — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}" />
+</head>
+
+<body>
+
+  {% if messages %}
+  <div class="toast-container">
+    {% for msg in messages %}
+    <div class="toast toast--{{ msg.tags }}">
+      <span>{{ msg }}</span>
+      <button class="toast__close" onclick="this.parentElement.remove()">×</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="auth-page">
+    <div class="auth-card">
+
+      <!-- ── Pill tab switcher ── -->
+      <div class="auth-tabs" role="tablist">
+        <div class="auth-tab-slider" id="tabSlider"></div>
+        <button class="auth-tab-btn active" id="tabLogin" onclick="switchTab('login')" role="tab"
+          aria-selected="true">Login</button>
+        <button class="auth-tab-btn" id="tabSignup" onclick="switchTab('signup')" role="tab"
+          aria-selected="false">Signup</button>
+      </div>
+
+      <!-- ── Slide track ── -->
+      <div class="auth-slider">
+        <div class="auth-slides" id="authSlides">
+
+          <!-- ════════════════════════════════════════
+             LOGIN SLIDE
+        ════════════════════════════════════════ -->
+          <div class="auth-slide" id="loginSlide">
+
+            <p class="auth-heading">Welcome back</p>
+            <p class="auth-sub">Sign in to your account</p>
+
+            {% if login_form.errors and show_login %}
+            <div class="form-alert form-alert--error">
+              {% for field, errs in login_form.errors.items %}{% for e in errs %}{{ e }} {% endfor %}{% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'accounts:login' %}" novalidate id="loginForm">
+              {% csrf_token %}
+
+              <!-- Login-as role strip -->
+              <div class="role-strip-wrap">
+                <span class="role-strip-label">Log in as</span>
+                <div class="role-strip">
+                  <div class="role-opt">
+                    <input type="radio" name="login_as" id="as_viewer" value="viewer" {% if login_form.login_as.value == 'viewer' or not login_form.login_as.value %}checked{% endif %} />
+                    <label for="as_viewer">
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                      Viewer
+                    </label>
+                  </div>
+                  <div class="role-opt">
+                    <input type="radio" name="login_as" id="as_uploader" value="uploader" {% if login_form.login_as.value == 'uploader' %}checked{% endif %} />
+                    <label for="as_uploader">
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <polyline points="16 16 12 12 8 16" />
+                        <line x1="12" y1="12" x2="12" y2="21" />
+                        <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+                      </svg>
+                      Uploader
+                    </label>
+                  </div>
+                  <div class="role-opt">
+                    <input type="radio" name="login_as" id="as_admin" value="admin" {% if login_form.login_as.value == 'admin' %}checked{% endif %} />
+                    <label for="as_admin">
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      </svg>
+                      Admin
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="auth-fields">
+                <div class="field">
+                  <label for="id_login_email">Email Address</label>
+                  <div class="input-wrap">
+                    <input type="email" id="id_login_email" name="email" value="{{ login_form.email.value|default:'' }}"
+                      placeholder="Email Address" autocomplete="email" required
+                      class="{% if login_form.email.errors %}error{% endif %}" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="id_login_pw">Password</label>
+                  <div class="input-wrap">
+                    <input type="password" id="id_login_pw" name="password" placeholder="Password"
+                      autocomplete="current-password" required />
+                    <button type="button" class="toggle-pw" onclick="togglePw(this)" aria-label="Toggle password">
+                      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"
+                        viewBox="0 0 24 24">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="forgot-row">
+                <a href="{% url 'accounts:password_reset' %}" class="forgot-link">Forgot password?</a>
+              </div>
+
+              <button type="submit" class="btn-auth" id="loginBtn">Login</button>
+            </form>
+
+            <div class="auth-footer">
+              Not a member? <button class="link-btn" onclick="switchTab('signup')">Signup now</button>
+            </div>
+          </div>
+          <!-- /LOGIN SLIDE -->
+
+          <!-- ════════════════════════════════════════
+             SIGNUP SLIDE
+        ════════════════════════════════════════ -->
+          <div class="auth-slide" id="signupSlide">
+
+            <p class="auth-heading">Create account</p>
+            <p class="auth-sub">Join MediaPlatform for free</p>
+
+            {% if register_form.non_field_errors and show_register %}
+            <div class="form-alert form-alert--error">{{ register_form.non_field_errors.0 }}</div>
+            {% endif %}
+
+            <form method="post" action="{% url 'accounts:register' %}" novalidate id="signupForm">
+              {% csrf_token %}
+
+              <div class="auth-fields">
+                <div class="name-row">
+                  <div class="field">
+                    <label for="id_first_name">First Name</label>
+                    <input type="text" id="id_first_name" name="first_name"
+                      value="{{ register_form.first_name.value|default:'' }}" placeholder="First name"
+                      class="{% if register_form.first_name.errors %}error{% endif %}" />
+                    {% for e in register_form.first_name.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+                  </div>
+                  <div class="field">
+                    <label for="id_last_name">Last Name</label>
+                    <input type="text" id="id_last_name" name="last_name"
+                      value="{{ register_form.last_name.value|default:'' }}" placeholder="Last name" />
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="id_reg_email">Email Address</label>
+                  <input type="email" id="id_reg_email" name="email" value="{{ register_form.email.value|default:'' }}"
+                    placeholder="Email Address" autocomplete="email"
+                    class="{% if register_form.email.errors %}error{% endif %}" />
+                  {% for e in register_form.email.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+                </div>
+
+                <div class="field">
+                  <label for="id_pw1">Password</label>
+                  <div class="input-wrap">
+                    <input type="password" id="id_pw1" name="password1" placeholder="Min. 8 characters"
+                      autocomplete="new-password" class="{% if register_form.password1.errors %}error{% endif %}" />
+                    <button type="button" class="toggle-pw" onclick="togglePw(this)" aria-label="Toggle password">
+                      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"
+                        viewBox="0 0 24 24">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    </button>
+                  </div>
+                  {% for e in register_form.password1.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+                </div>
+
+                <div class="field">
+                  <label for="id_pw2">Confirm Password</label>
+                  <div class="input-wrap">
+                    <input type="password" id="id_pw2" name="password2" placeholder="Repeat password"
+                      autocomplete="new-password" class="{% if register_form.password2.errors %}error{% endif %}" />
+                    <button type="button" class="toggle-pw" onclick="togglePw(this)" aria-label="Toggle password">
+                      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"
+                        viewBox="0 0 24 24">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    </button>
+                  </div>
+                  {% for e in register_form.password2.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+                </div>
+
+                <!-- Account type -->
+                <div class="field">
+                  <label>Account Type</label>
+                  <div class="role-cards">
+                    <label class="role-card">
+                      <input type="radio" name="role" value="viewer" {% if register_form.role.value == 'viewer' or not register_form.role.value %}checked{% endif %} />
+                      <div class="role-card-inner">
+                        <div class="role-card-icon">
+                          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
+                            viewBox="0 0 24 24">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                        </div>
+                        <div class="role-card-text">
+                          <strong>Viewer</strong>
+                          <span>Browse and watch media</span>
+                        </div>
+                      </div>
+                    </label>
+                    <label class="role-card">
+                      <input type="radio" name="role" value="uploader" {% if register_form.role.value == 'uploader' %}checked{% endif %} />
+                      <div class="role-card-inner">
+                        <div class="role-card-icon">
+                          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
+                            viewBox="0 0 24 24">
+                            <polyline points="16 16 12 12 8 16" />
+                            <line x1="12" y1="12" x2="12" y2="21" />
+                            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+                          </svg>
+                        </div>
+                        <div class="role-card-text">
+                          <strong>Uploader</strong>
+                          <span>Upload and manage content</span>
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div class="admin-note">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    Admin access requires Super Admin approval. Register first, then request a role upgrade from your
+                    profile.
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" class="btn-auth">Create Account</button>
+            </form>
+
+            <div class="auth-footer">
+              Already a member? <button class="link-btn" onclick="switchTab('login')">Login now</button>
+            </div>
+          </div>
+          <!-- /SIGNUP SLIDE -->
+
+        </div><!-- /auth-slides -->
+      </div><!-- /auth-slider -->
+
+    </div><!-- /auth-card -->
+  </div><!-- /auth-page -->
+
+  <script>
+    function switchTab(tab) {
+      const slides = document.getElementById('authSlides');
+      const slider = document.getElementById('tabSlider');
+      const btnL = document.getElementById('tabLogin');
+      const btnS = document.getElementById('tabSignup');
+      if (tab === 'login') {
+        slides.style.transform = 'translateX(0)';
+        slider.classList.remove('signup');
+        btnL.classList.add('active'); btnS.classList.remove('active');
+        btnL.setAttribute('aria-selected', 'true'); btnS.setAttribute('aria-selected', 'false');
+        setTimeout(() => document.getElementById('id_login_email')?.focus(), 420);
+      } else {
+        slides.style.transform = 'translateX(-100%)';
+        slider.classList.add('signup');
+        btnS.classList.add('active'); btnL.classList.remove('active');
+        btnS.setAttribute('aria-selected', 'true'); btnL.setAttribute('aria-selected', 'false');
+        setTimeout(() => document.getElementById('id_first_name')?.focus(), 420);
+      }
+    }
+
+    function togglePw(btn) {
+      const inp = btn.closest('.input-wrap').querySelector('input');
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+    }
+
+    // Loading state on submit
+    document.getElementById('loginForm').addEventListener('submit', function () {
+      const b = document.getElementById('loginBtn');
+      b.disabled = true; b.textContent = 'Signing in…';
+    });
+
+    // Auto-dismiss toasts after 4s
+    document.querySelectorAll('.toast').forEach(t => {
+      setTimeout(() => { t.style.transition = 'opacity 0.3s'; t.style.opacity = '0'; }, 3500);
+      setTimeout(() => t.remove(), 3800);
+    });
+
+    // Show correct tab based on server context
+    {% if show_register %} switchTab('signup'); {% endif %}
+    {% if show_login %} switchTab('login'); {% endif %}
+  </script>
+</body>
+
+</html>
