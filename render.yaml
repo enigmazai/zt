@@ -3,7 +3,7 @@ services:
     name: media-platform
     runtime: python
     buildCommand: pip install -r requirements.txt && bash build.sh
-    startCommand: gunicorn Media_platform.wsgi:application
+    startCommand: python manage.py migrate --no-input && gunicorn Media_platform.wsgi:application
     envVars:
       - key: SECRET_KEY
         sync: false
