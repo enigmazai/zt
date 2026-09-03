@@ -1,4 +1,5 @@
 import io
+import logging
 import qrcode
 import qrcode.image.svg
 
@@ -38,6 +39,7 @@ from audit.services import audit_log
 User = get_user_model()
 PASSWORD_AUTH_BACKEND = 'django.contrib.auth.backends.ModelBackend'
 PENDING_AUTH_BACKEND_SESSION_KEY = 'pending_auth_backend'
+logger = logging.getLogger(__name__)
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -110,6 +112,7 @@ def register_view(request):
                     messages.info(
                         request, f'[DEBUG] Verification link: {verify_url}')
             except Exception:
+                logger.exception('Registration verification email failed')
                 # Email failed — delete user so they can retry cleanly
                 email = user.email
                 user.delete()
