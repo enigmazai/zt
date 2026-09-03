@@ -7,6 +7,10 @@ services:
     envVars:
       - key: SECRET_KEY
         sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
       - key: DEBUG
         value: "False"
       - key: ALLOWED_HOSTS
