@@ -111,12 +111,13 @@ def register_view(request):
                         request, f'[DEBUG] Verification link: {verify_url}')
             except Exception:
                 # Email failed — delete user so they can retry cleanly
+                email = user.email
                 user.delete()
                 audit_log(
                     action=AuditLog.Action.SUSPICIOUS_ACTIVITY,
-                    user=user,
+                    user=None,
                     request=request,
-                    description=f'Registration rolled back — verification email failed for {user.email}',
+                    description=f'Registration rolled back — verification email failed for {email}',
                     category='auth',
                 )
                 messages.error(
